@@ -2,6 +2,7 @@
 package com.example.bpp_laundry.ui.layout
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -41,11 +42,13 @@ fun AppMainLayout(
                 modifier = Modifier
                     .fillMaxWidth()
                     .shadow(
-                        elevation = 8.dp,
-                        spotColor = AppColors.TextMain.copy(alpha = 0.10f),
+                        elevation = 24.dp,
+                        spotColor = AppColors.TextMain.copy(alpha = 0.18f),
+                        ambientColor = AppColors.TextMain.copy(alpha = 0.06f),
                     )
                     .background(AppColors.Surface)
                     .statusBarsPadding()
+                    .border(width = 1.dp, AppColors.BorderApp)
             ) {
                 AppTopSpacer()
 
@@ -65,12 +68,13 @@ fun AppMainLayout(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth()
+                    .imePadding()
                     .verticalScroll(rememberScrollState())
                     .padding(
                         start = horizontalPadding,
                         end = horizontalPadding,
                         top = verticalPadding,
-                        bottom = verticalPadding + bottomBarHeight,
+                        bottom = verticalPadding + bottomBarHeight
                     ),
                 verticalArrangement = Arrangement.spacedBy(contentGap),
                 content = content

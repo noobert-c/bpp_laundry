@@ -30,7 +30,9 @@ import androidx.compose.material.icons.outlined.ChevronRight
 import androidx.compose.material.icons.outlined.LocalShipping
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -62,6 +64,7 @@ import com.example.bpp_laundry.ui.components.AppOrderFilterChips
 import com.example.bpp_laundry.ui.components.AppStatusBadge
 import com.example.bpp_laundry.ui.components.AppTextField
 import com.example.bpp_laundry.ui.layout.AppMainLayout
+import com.example.bpp_laundry.ui.theme.AppColors
 
 /* -------------------------------------------------------------------------- */
 /*  Design tokens                                                             */
@@ -159,12 +162,11 @@ fun OrderListScreen(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 AppTextField(
-                    label = "Input",
                     value = state.query,
                     onValueChange = onQueryChange,
                     placeholder = "Cari pesanan...",
                     prefixIcon = Icons.Outlined.Search,
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.fillMaxWidth(),
                     imeAction = ImeAction.Search,
                 )
 
@@ -265,40 +267,17 @@ private fun Header(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Box(
-                modifier = Modifier
-                    .size(40.dp)
-                    .clip(CircleShape)
-                    .background(OrdersColors.Surface)
-                    .border(1.dp, OrdersColors.Border, CircleShape)
-                    .clickable(role = Role.Button, onClick = onNotificationClick),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    imageVector = Icons.Outlined.Notifications,
-                    contentDescription = "Notifikasi",
-                    tint = OrdersColors.Text,
-                    modifier = Modifier.size(20.dp),
-                )
-            }
-            Box(
-                modifier = Modifier
-                    .size(40.dp)
-                    .clip(CircleShape)
-                    .background(OrdersColors.PrimaryTint)
-                    .clickable(role = Role.Button, onClick = onAvatarClick),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    text = initials,
-                    style = TextStyle(
-                        fontFamily = Inter,
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 14.sp,
-                        color = OrdersColors.Primary,
-                    ),
-                )
-            }
+
+                IconButton(
+                    onClick = onNotificationClick
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.Settings,
+                        contentDescription = "Notifikasi",
+                        tint = AppColors.TextMain,
+                    ) }
+
+
         }
     }
 }

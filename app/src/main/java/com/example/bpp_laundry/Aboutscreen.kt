@@ -3,6 +3,7 @@ package com.example.bpp_laundry
 
 
 import android.annotation.SuppressLint
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -39,6 +40,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
@@ -194,8 +196,8 @@ fun AboutScreen(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
-                    FooterText("Dikembangkan oleh Tim LaundryFlow")
-                    FooterText("© 2026 LaundryFlow. Hak cipta dilindungi.")
+                    FooterText("Dikembangkan oleh Tim BPP Laundry")
+                    FooterText("© 2026 BPP Laundry. Hak cipta dilindungi.")
                 }
             }
         }
@@ -243,16 +245,15 @@ private fun AppIdentity(versionName: String) {
                 .background(AboutColors.Primary),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(
-                imageVector = Icons.Outlined.Checkroom, // lambang baju
-                contentDescription = "Logo LaundryFlow",
-                tint = AboutColors.OnPrimary,
+            Image(
+                painter = painterResource(id = R.drawable.ic_app_icon),
+                contentDescription = "Logo BPP Laundry",
                 modifier = Modifier.size(40.dp),
             )
         }
 
         Text(
-            text = "LaundryFlow",
+            text = "BPP Laundry",
             style = TextStyle(
                 fontFamily = Inter,
                 fontWeight = FontWeight.SemiBold,

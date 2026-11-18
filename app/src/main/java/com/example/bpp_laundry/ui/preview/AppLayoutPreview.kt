@@ -9,28 +9,24 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
-import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import com.example.bpp_laundry.ui.components.*
@@ -45,11 +41,13 @@ import com.example.bpp_laundry.ui.components.AppOrderCard
 import com.example.bpp_laundry.ui.components.AppPasswordField
 import com.example.bpp_laundry.ui.components.AppTextBlock
 import com.example.bpp_laundry.ui.components.AppTextButton
-import com.example.bpp_laundry.ui.components.AppTextButtonRow
 import com.example.bpp_laundry.ui.components.AppTextField
 import com.example.bpp_laundry.ui.layout.AppFormLayout
 import com.example.bpp_laundry.ui.theme.AppColors
 import com.example.bpp_laundry.ui.theme.AppText
+import com.example.laundryflow.components.CheckPoint
+import com.example.laundryflow.components.CheckPointCard
+import com.example.laundryflow.components.CheckPointColor
 
 @Preview(
     name = "App Layout",
@@ -233,6 +231,32 @@ fun AppLayoutPreview() {
                     checked = isChecked,
                     onCheckedChange = { isChecked = it },
                 )
+
+                val checkPoints = remember {
+                    mutableStateListOf(
+                        CheckPoint(1, "Penerimaan", Color(0xFF3B82F6)),   // biru
+                        CheckPoint(2, "Pencucian", Color(0xFF22C55E)),    // hijau
+                        CheckPoint(3, "Pengeringan", Color(0xFFF97316)),  // oranye
+                        CheckPoint(4, "Penyetrikaan", Color(0xFF8B5CF6))  // ungu
+                    )
+                }
+
+                checkPoints.forEach { item ->
+
+                    CheckPointCard(
+                        item = item,
+
+                        onEdit = { selected ->
+                            // Aksi ketika tombol Edit diklik
+                            println("Edit: ${selected.name}")
+                        },
+
+                        onDelete = { selected ->
+                            // Aksi ketika tombol Hapus diklik
+                            checkPoints.remove(selected)
+                        }
+                    )
+                }
 
 
             }

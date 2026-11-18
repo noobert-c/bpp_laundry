@@ -150,7 +150,7 @@ data class AddOrderUiState(
     val services: List<ServiceOption> = sampleServices,
     val selectedService: ServiceOption? = null,
     val weight: String = "",          // kg, boleh koma atau titik
-    val ratePerKg: String = "",       // hanya digit
+    val ratePerKg: String = "",       // hanya digit, diisi otomatis dari layanan
     val receivedDate: String = "",    // sudah diformat, mis. "8 Nov 2026"
     val estimateDate: String = "",
     val options: List<OrderOption> = sampleOptions,
@@ -190,6 +190,60 @@ private val samplePaymentMethods = listOf("Tunai", "QRIS", "Transfer Bank")
 private fun formatRupiah(value: Long): String =
     "Rp " + String.format(Locale.forLanguageTag("id-ID"), "%,d", value)
 
+/** Hanya angka + satu pemisah desimal, maksimal 2 digit desimal. */
+private fun sanitizeWeight(input: String): String {
+    val cleaned = input.filter { it.isDigit() || it == ',' || it == '.' }
+    val sepIndex = cleaned.indexOfFirst { it == ',' || it == '.' }
+    if (sepIndex == -1) return cleaned.take(4)
+    val intPart = cleaned.substring(0, sepIndex).take(4)
+    val decPart = cleaned.substring(sepIndex + 1).filter { it.isDigit() }.take(2)
+    return "$intPart,$decPart"
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Route: state lokal sementara (hapus saat sudah ada ViewModel/DB)          */
+/* -------------------------------------------------------------------------- */
+
+@Composable
+fun AddOrderRoute(
+    onExit: () -> Unit = {},
+    onSaved: () -> Unit = {},
+) {
+    var state by remember { mutableStateOf(AddOrderUiState()) }
+
+    AddOrderScreen(
+        state = state,
+        onCustomerQueryChange = { q ->
+            state = state.copy(
+                customerQuery = q,
+                selectedCustomer = null,
+                customerSuggestions = if (q.isBlank()) emptyList()
+                else listOf("Rina Kartika", "Andi Pratama", "Dewi Lestari")
+                    .filter { it.contains(q, ignoreCase = true) },
+            )
+        },
+        onCustomerSelected = {
+            state = state.copy(
+                customerQuery = it,
+                selectedCustomer = it,
+                customerSuggestions = emptyList(),
+            )
+        },
+        onServiceSelected = {
+            state = state.copy(selectedService = it, ratePerKg = it.ratePerKg.toString())
+        },
+        onWeightChange = { state = state.copy(weight = it) },
+        onOptionToggle = { id, checked ->
+            state = state.copy(
+                options = state.options.map { if (it.id == id) it.copy(checked = checked) else it },
+            )
+        },
+        onPaymentSelected = { state = state.copy(selectedPayment = it) },
+        onSaveClick = onSaved,
+        onExit = onExit,
+    )
+}
+
 /* -------------------------------------------------------------------------- */
 /*  Screen                                                                    */
 /* -------------------------------------------------------------------------- */
@@ -199,9 +253,8 @@ fun AddOrderScreen(
     state: AddOrderUiState = AddOrderUiState(),
     onCustomerQueryChange: (String) -> Unit = {},
     onCustomerSelected: (String) -> Unit = {},
-    onServiceSelected: (ServiceOption) -> Unit = {},   // ViewModel: isi ratePerKg dari layanan
+    onServiceSelected: (ServiceOption) -> Unit = {},   // isi ratePerKg dari layanan
     onWeightChange: (String) -> Unit = {},
-    onRateChange: (String) -> Unit = {},
     onReceivedDateClick: () -> Unit = {},
     onEstimateDateClick: () -> Unit = {},
     onOptionToggle: (id: String, checked: Boolean) -> Unit = { _, _ -> },
@@ -250,14 +303,13 @@ fun AddOrderScreen(
                                 navBarBottom,
                     ),
                 verticalArrangement = Arrangement.spacedBy(AddOrderLayout.ContentGap),
-            ){
+            ) {
                 OrderForm(
                     state = state,
                     onCustomerQueryChange = onCustomerQueryChange,
                     onCustomerSelected = onCustomerSelected,
                     onServiceSelected = onServiceSelected,
                     onWeightChange = onWeightChange,
-                    onRateChange = onRateChange,
                     onReceivedDateClick = onReceivedDateClick,
                     onEstimateDateClick = onEstimateDateClick,
                     onOptionToggle = onOptionToggle,
@@ -369,7 +421,6 @@ private fun OrderForm(
     onCustomerSelected: (String) -> Unit,
     onServiceSelected: (ServiceOption) -> Unit,
     onWeightChange: (String) -> Unit,
-    onRateChange: (String) -> Unit,
     onReceivedDateClick: () -> Unit,
     onEstimateDateClick: () -> Unit,
     onOptionToggle: (id: String, checked: Boolean) -> Unit,
@@ -396,23 +447,23 @@ private fun OrderForm(
         TextInputField(
             label = "Berat Cucian (kg)",
             value = state.weight,
-            onValueChange = { onWeightChange(it.filter { c -> c.isDigit() || c == ',' || c == '.' }.take(6)) },
+            onValueChange = { onWeightChange(sanitizeWeight(it)) },
             placeholder = "0",
             keyboardType = KeyboardType.Decimal,
             modifier = Modifier.weight(1f),
         )
+        // Tarif: view only, terisi otomatis dari layanan (nanti dari DB).
         TextInputField(
             label = "Tarif per Kg",
             value = state.ratePerKg,
-            onValueChange = { onRateChange(it.filter(Char::isDigit).take(9)) },
-            placeholder = "0",
+            onValueChange = {},
+            placeholder = "Pilih layanan",
             prefix = "Rp",
             keyboardType = KeyboardType.Number,
+            readOnly = true,
             modifier = Modifier.weight(1f),
         )
     }
-
-
 
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         state.options.forEach { option ->
@@ -595,6 +646,7 @@ private fun TextInputField(
     keyboardType: KeyboardType,
     modifier: Modifier = Modifier,
     prefix: String? = null,
+    readOnly: Boolean = false,
 ) {
     var focused by remember { mutableStateOf(false) }
 
@@ -603,6 +655,8 @@ private fun TextInputField(
         BasicTextField(
             value = value,
             onValueChange = onValueChange,
+            readOnly = readOnly,
+            enabled = !readOnly, // view only: tidak bisa fokus, keyboard tidak muncul
             singleLine = true,
             textStyle = InputTextStyle,
             cursorBrush = SolidColor(AddOrderColors.Primary),
@@ -611,7 +665,7 @@ private fun TextInputField(
                 .fillMaxWidth()
                 .onFocusChanged { focused = it.isFocused },
             decorationBox = { inner ->
-                FieldContainer(focused = focused) {
+                FieldContainer(focused = focused && !readOnly) {
                     if (prefix != null) {
                         Text(text = prefix, style = inter(14.sp, FontWeight.Medium, AddOrderColors.Muted))
                     }
@@ -883,56 +937,14 @@ private fun DialogButton(
 /*  Preview                                                                   */
 /* -------------------------------------------------------------------------- */
 
-@Composable
-private fun AddOrderPreviewHost(initial: AddOrderUiState = AddOrderUiState()) {
-    var state by remember { mutableStateOf(initial) }
-    AddOrderScreen(
-        state = state,
-        onCustomerQueryChange = { q ->
-            state = state.copy(
-                customerQuery = q,
-                selectedCustomer = null,
-                customerSuggestions = if (q.isBlank()) emptyList()
-                else listOf("Rina Kartika", "Andi Pratama", "Dewi Lestari")
-                    .filter { it.contains(q, ignoreCase = true) },
-            )
-        },
-        onCustomerSelected = {
-            state = state.copy(customerQuery = it, selectedCustomer = it, customerSuggestions = emptyList())
-        },
-        onServiceSelected = { state = state.copy(selectedService = it, ratePerKg = it.ratePerKg.toString()) },
-        onWeightChange = { state = state.copy(weight = it) },
-        onRateChange = { state = state.copy(ratePerKg = it) },
-        onOptionToggle = { id, checked ->
-            state = state.copy(options = state.options.map { if (it.id == id) it.copy(checked = checked) else it })
-        },
-        onPaymentSelected = { state = state.copy(selectedPayment = it) },
-    )
-}
-
 @Preview(name = "Phone 393x852", widthDp = 393, heightDp = 852, showBackground = true)
 @Composable
-private fun AddOrderPhonePreview() = AddOrderPreviewHost()
-
-@Preview(name = "Terisi", widthDp = 393, heightDp = 852, showBackground = true)
-@Composable
-private fun AddOrderFilledPreview() = AddOrderPreviewHost(
-    AddOrderUiState(
-        customerQuery = "Rina Kartika",
-        selectedCustomer = "Rina Kartika",
-        selectedService = sampleServices[1],
-        weight = "6,5",
-        ratePerKg = "8000",
-        receivedDate = "8 Nov 2026",
-        estimateDate = "10 Nov 2026",
-        selectedPayment = "QRIS",
-    ),
-)
+private fun AddOrderPhonePreview() = AddOrderRoute()
 
 @Preview(name = "Small phone 320x568", widthDp = 320, heightDp = 568, showBackground = true)
 @Composable
-private fun AddOrderSmallPreview() = AddOrderPreviewHost()
+private fun AddOrderSmallPreview() = AddOrderRoute()
 
 @Preview(name = "Tablet 800x1280", widthDp = 800, heightDp = 1280, showBackground = true)
 @Composable
-private fun AddOrderTabletPreview() = AddOrderPreviewHost()
+private fun AddOrderTabletPreview() = AddOrderRoute()

@@ -1,68 +1,35 @@
 package com.example.bpp_laundry
 
-
-import android.annotation.SuppressLint
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
+import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.ChevronLeft
 import androidx.compose.material.icons.outlined.Email
-import androidx.compose.material.icons.outlined.Mail
-import androidx.compose.material.icons.outlined.PersonOutline
-import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.bpp_laundry.auth.ForgotPasswordUiState
+import com.example.bpp_laundry.auth.ForgotPasswordViewModel
 import com.example.bpp_laundry.ui.components.AppBackButton
 import com.example.bpp_laundry.ui.components.AppButton
-import com.example.bpp_laundry.ui.components.AppPasswordField
 import com.example.bpp_laundry.ui.components.AppTextBlock
-import com.example.bpp_laundry.ui.components.AppTextButton
 import com.example.bpp_laundry.ui.components.AppTextButtonRow
 import com.example.bpp_laundry.ui.components.AppTextField
 import com.example.bpp_laundry.ui.layout.AppFormLayout
@@ -79,8 +46,34 @@ fun ForgotPasswordscreen(
     onPrevious: () -> Unit = {},
     onKirimTautan: () -> Unit = {},
     onBackToLogin: () -> Unit = {},
-
+    viewModel: ForgotPasswordViewModel = viewModel()
 ) {
+    val context = LocalContext.current
+    val uiState by viewModel.uiState.collectAsState()
+
+    var email by rememberSaveable {
+        mutableStateOf("")
+    }
+
+    LaunchedEffect(uiState) {
+        when (val state = uiState) {
+            is ForgotPasswordUiState.OtpSent -> {
+                val info = if (!state.otpCode.isNullOrBlank()) {
+                    "${state.message}\n(Kode OTP: ${state.otpCode})"
+                } else {
+                    state.message
+                }
+                Toast.makeText(context, info, Toast.LENGTH_LONG).show()
+                onKirimTautan()
+                viewModel.resetState()
+            }
+            is ForgotPasswordUiState.Error -> {
+                Toast.makeText(context, state.message, Toast.LENGTH_LONG).show()
+            }
+            else -> Unit
+        }
+    }
+
     AppLayout(
         topBar = {
             AppBackButton(onClick = onPrevious)
@@ -95,18 +88,10 @@ fun ForgotPasswordscreen(
 
                 AppTextBlock(
                     header = "Lupa kata sandi?",
-                    body = "Masukkan email terdaftar Anda. Kami akan mengirimkan tautan untuk mengatur ulang kata sandi.",
+                    body = "Masukkan email terdaftar Anda. Kami akan mengirimkan kode OTP untuk mengatur ulang kata sandi.",
                 )
 
                 Spacer(modifier = Modifier.height(4.dp))
-
-
-
-                var email by rememberSaveable {
-                    mutableStateOf("")
-                }
-
-
 
                 AppFormLayout {
                     AppTextField(
@@ -115,18 +100,28 @@ fun ForgotPasswordscreen(
                         onValueChange = { email = it },
                         placeholder = "nama@email.com",
                         keyboardType = KeyboardType.Email,
-                        imeAction = ImeAction.Next,
+                        imeAction = ImeAction.Done,
                         prefixIcon = Icons.Outlined.Email
                     )
-
                 }
 
+                if (uiState is ForgotPasswordUiState.Error) {
+                    Text(
+                        text = (uiState as ForgotPasswordUiState.Error).message,
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
 
+                val isLoading = uiState is ForgotPasswordUiState.Loading
 
-                AppButton("Kirim Tautan Reset", onClick = onKirimTautan)
-
-
-
+                AppButton(
+                    text = if (isLoading) "Memproses..." else "Kirim Kode OTP",
+                    enabled = !isLoading,
+                    onClick = {
+                        viewModel.requestOtp(email)
+                    }
+                )
             }
         },
 

@@ -44,7 +44,9 @@ dependencies {
     implementation(libs.androidx.constraintlayout)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.foundation.layout)
+    implementation(libs.androidx.material3)
     implementation(libs.androidx.tv.material)
+    implementation(libs.androidx.ui.text)
     implementation(libs.androidx.ui.unit)
     implementation(libs.material)
 
@@ -67,4 +69,10 @@ dependencies {
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.androidx.junit)
     implementation("androidx.navigation:navigation-compose:2.9.6")
+    implementation(libs.retrofit)
+    implementation(libs.retrofit.gson)
+    implementation(libs.datastore.preferences)
+    implementation(libs.lifecycle.viewmodel.compose)
+
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
 }

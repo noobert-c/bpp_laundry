@@ -18,16 +18,19 @@ import com.example.bpp_laundry.SplashScreen
 import com.example.bpp_laundry.onboarding.*
 import com.example.bpp_laundry.ui.preview.LoginScreen
 import com.example.bpp_laundry.ui.preview.RegisterScreen
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.bpp_laundry.auth.ForgotPasswordViewModel
 import kotlinx.coroutines.delay
 
 
 @Composable
 fun AppNavigation() {
     val navController = rememberNavController()
+    val forgotPasswordViewModel: ForgotPasswordViewModel = viewModel()
 
     NavHost(
         navController = navController,
-        startDestination = Screen.SplashScreen
+        startDestination = Screen.Login
     ) {
         composable(Screen.SplashScreen) {
             SplashScreen()
@@ -77,7 +80,11 @@ fun AppNavigation() {
         composable(Screen.Login) {
             LoginScreen(
                 onLanjutkan = {
-                    navController.navigate(Screen.Home)
+                    navController.navigate(Screen.Home) {
+                        popUpTo(Screen.Login) {
+                            inclusive = true
+                        }
+                    }
                 },
                 onLupaSandi = {
                     navController.navigate(Screen.ForgotPassword)
@@ -91,10 +98,18 @@ fun AppNavigation() {
         composable(Screen.Register) {
             RegisterScreen(
                 onDaftar = {
-                    navController.navigate(Screen.Login)
+                    navController.navigate(Screen.Login) {
+                        popUpTo(Screen.Register) {
+                            inclusive = true
+                        }
+                    }
                 },
                 onMasuk = {
-                    navController.navigate(Screen.Login)
+                    navController.navigate(Screen.Login) {
+                        popUpTo(Screen.Register) {
+                            inclusive = true
+                        }
+                    }
                 }
             )
         }
@@ -102,31 +117,83 @@ fun AppNavigation() {
         composable(Screen.ForgotPassword) {
             ForgotPasswordscreen(
                 onPrevious = {
-                    navController.navigate(Screen.Login)
+                    navController.popBackStack()
                 },
                 onKirimTautan = {
                     navController.navigate(Screen.OtpVerification)
                 },
                 onBackToLogin = {
-                    navController.navigate(Screen.Login)
-                }
+                    navController.navigate(Screen.Login) {
+                        popUpTo(Screen.Login) { inclusive = true }
+                    }
+                },
+                viewModel = forgotPasswordViewModel
             )
         }
 
         composable(Screen.OtpVerification) {
-            OtpVerificationScreen()
+            OtpVerificationScreen(
+                onBackClick = {
+                    navController.popBackStack()
+                },
+                onVerifyClick = {
+                    navController.navigate(Screen.OtpSuccess)
+                },
+                onBackToLoginClick = {
+                    navController.navigate(Screen.Login) {
+                        popUpTo(Screen.Login) { inclusive = true }
+                    }
+                },
+                viewModel = forgotPasswordViewModel
+            )
         }
 
         composable(Screen.OtpSuccess) {
-            OtpSuccessScreen()
+            OtpSuccessScreen(
+                onBackClick = {
+                    navController.popBackStack()
+                },
+                onContinueClick = {
+                    navController.navigate(Screen.NewPasswordI)
+                },
+                onBackToLoginClick = {
+                    navController.navigate(Screen.Login) {
+                        popUpTo(Screen.Login) { inclusive = true }
+                    }
+                }
+            )
         }
 
         composable(Screen.NewPasswordI) {
-            NewPasswordScreen()
+            NewPasswordScreen(
+                onBackClick = {
+                    navController.popBackStack()
+                },
+                onSaveClick = {
+                    navController.navigate(Screen.NewPasswordSuccess)
+                },
+                onBackToLoginClick = {
+                    navController.navigate(Screen.Login) {
+                        popUpTo(Screen.Login) { inclusive = true }
+                    }
+                },
+                viewModel = forgotPasswordViewModel
+            )
         }
 
         composable(Screen.NewPasswordSuccess) {
-            PasswordSuccessScreen()
+            PasswordSuccessScreen(
+                onContinueClick = {
+                    navController.navigate(Screen.Login) {
+                        popUpTo(Screen.Login) { inclusive = true }
+                    }
+                },
+                onBackToLoginClick = {
+                    navController.navigate(Screen.Login) {
+                        popUpTo(Screen.Login) { inclusive = true }
+                    }
+                }
+            )
         }
 
         composable(Screen.Home) {

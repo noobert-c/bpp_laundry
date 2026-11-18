@@ -1,6 +1,9 @@
 
 package com.example.bpp_laundry
 
+import android.widget.Toast
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -13,9 +16,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ChevronLeft
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -25,6 +30,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
@@ -35,11 +44,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.graphics.Color
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.platform.LocalFocusManager
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.bpp_laundry.auth.ForgotPasswordUiState
+import com.example.bpp_laundry.auth.ForgotPasswordViewModel
+import com.example.bpp_laundry.ui.components.AppButton
 import com.example.bpp_laundry.ui.components.AppOtpInput
 import com.example.bpp_laundry.ui.layout.AppLayout
 import com.example.bpp_laundry.ui.theme.AppColors
@@ -62,12 +70,17 @@ private const val RESEND_SECONDS = 30
 
 @Composable
 fun OtpVerificationScreen(
-    maskedEmail: String = "r***@freshlaundry.id",
+    maskedEmail: String = "",
     onBackClick: () -> Unit = {},
-    onVerifyClick: (otp: String) -> Unit = {},
+    onVerifyClick: () -> Unit = {},
     onResendClick: () -> Unit = {},
     onBackToLoginClick: () -> Unit = {},
+    viewModel: ForgotPasswordViewModel = viewModel()
 ) {
+    val context = LocalContext.current
+    val uiState by viewModel.uiState.collectAsState()
+    val displayEmail = if (maskedEmail.isNotBlank()) maskedEmail else viewModel.maskedEmail
+
     var otp by rememberSaveable { mutableStateOf("") }
     var secondsLeft by rememberSaveable {
         mutableIntStateOf(RESEND_SECONDS)
@@ -81,7 +94,30 @@ fun OtpVerificationScreen(
     val submit = {
         if (isComplete) {
             focusManager.clearFocus()
-            onVerifyClick(otp)
+            viewModel.verifyOtp(otp)
+        }
+    }
+
+    LaunchedEffect(uiState) {
+        when (val state = uiState) {
+            is ForgotPasswordUiState.OtpVerified -> {
+                Toast.makeText(context, state.message, Toast.LENGTH_SHORT).show()
+                onVerifyClick()
+                viewModel.resetState()
+            }
+            is ForgotPasswordUiState.OtpSent -> {
+                val info = if (!state.otpCode.isNullOrBlank()) {
+                    "${state.message}\n(Kode OTP: ${state.otpCode})"
+                } else {
+                    state.message
+                }
+                Toast.makeText(context, info, Toast.LENGTH_LONG).show()
+                viewModel.resetState()
+            }
+            is ForgotPasswordUiState.Error -> {
+                Toast.makeText(context, state.message, Toast.LENGTH_LONG).show()
+            }
+            else -> Unit
         }
     }
 
@@ -107,7 +143,7 @@ fun OtpVerificationScreen(
 
         content = {
             // Heading
-            Heading(maskedEmail = maskedEmail)
+            Heading(maskedEmail = displayEmail)
 
             // Input OTP
             Column(
@@ -140,16 +176,26 @@ fun OtpVerificationScreen(
                     borderColor = OtpColors.Border,
                     digitCount = OTP_LENGTH,
                 )
+
+                if (uiState is ForgotPasswordUiState.Error) {
+                    Text(
+                        text = (uiState as ForgotPasswordUiState.Error).message,
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
             }
 
             // Tombol verifikasi dan kirim ulang
             Column(
                 verticalArrangement = Arrangement.spacedBy(24.dp)
             ) {
-                VerifyButton(
-                    text = "Verifikasi",
-                    enabled = isComplete,
-                    onClick = submit,
+                val isLoading = uiState is ForgotPasswordUiState.Loading
+
+                AppButton(
+                    text = if (isLoading) "Memverifikasi..." else "Verifikasi",
+                    enabled = !isLoading && isComplete,
+                    onClick = submit
                 )
 
                 ResendBlock(
@@ -158,6 +204,7 @@ fun OtpVerificationScreen(
                         otp = ""
                         secondsLeft = RESEND_SECONDS
                         timerKey++
+                        viewModel.resendOtp()
                         onResendClick()
                     },
                 )

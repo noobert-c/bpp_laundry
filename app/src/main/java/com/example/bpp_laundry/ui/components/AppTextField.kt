@@ -53,7 +53,7 @@ private object AppTextFieldColors {
 
 @Composable
 fun AppTextField(
-    label: String,
+    label: String? = null,
     value: String,
     onValueChange: (String) -> Unit,
     modifier: Modifier = Modifier,
@@ -79,14 +79,18 @@ fun AppTextField(
 
     Column(
         modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(6.dp),
+        verticalArrangement = Arrangement.spacedBy(
+            if (label != null) 6.dp else 0.dp
+        ),
     ) {
-        Text(
-            text = label,
-            fontSize = 13.sp,
-            fontWeight = FontWeight.Medium,
-            color = AppTextFieldColors.Label,
-        )
+        if (label != null) {
+            Text(
+                text = label,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Medium,
+                color = AppTextFieldColors.Label,
+            )
+        }
 
         BasicTextField(
             value = value,

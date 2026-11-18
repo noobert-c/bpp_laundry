@@ -14,6 +14,13 @@ import com.example.bpp_laundry.navigation.AppNavigation
 import com.example.bpp_laundry.DashboardScreen
 import com.example.bpp_laundry.ui.layout.AppLayout
 import com.example.bpp_laundry.ui.preview.*
+import com.example.bpp_laundry.ui.screens.WhatsAppSettingsScreen
+import com.example.laundryflow.AkunFeature
+import com.example.laundryflow.AkunTheme
+
+import com.example.laundryflow.CheckPointScreen
+import com.example.laundryflow.PaketHargaFeature
+
 
 class MainActivity : ComponentActivity() {
 
@@ -37,7 +44,7 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    AppNavigation()
+                    AddOrderScreen()
                 }
             }
         }

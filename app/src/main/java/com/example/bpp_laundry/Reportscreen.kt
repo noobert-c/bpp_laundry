@@ -35,6 +35,7 @@ import androidx.compose.material.icons.outlined.Download
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.ReceiptLong
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -54,6 +55,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.bpp_laundry.ui.theme.AppColors
 
 
 enum class MainTab(
@@ -292,8 +294,7 @@ private fun Header(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .heightIn(min = 56.dp)
-            .padding(horizontal = 20.dp),
+            .heightIn(min = 56.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
@@ -310,45 +311,14 @@ private fun Header(
             ),
         )
 
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        IconButton(
+            onClick = onNotificationClick
         ) {
-            Box(
-                modifier = Modifier
-                    .size(40.dp)
-                    .clip(CircleShape)
-                    .background(ReportColors.Surface)
-                    .border(1.dp, ReportColors.Border, CircleShape)
-                    .clickable(role = Role.Button, onClick = onNotificationClick),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    imageVector = Icons.Outlined.Notifications,
-                    contentDescription = "Notifikasi",
-                    tint = ReportColors.Text,
-                    modifier = Modifier.size(20.dp),
-                )
-            }
-            Box(
-                modifier = Modifier
-                    .size(40.dp)
-                    .clip(CircleShape)
-                    .background(ReportColors.PrimaryTint)
-                    .clickable(role = Role.Button, onClick = onAvatarClick),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    text = initials,
-                    style = TextStyle(
-                        fontFamily = Inter,
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 14.sp,
-                        color = ReportColors.Primary,
-                    ),
-                )
-            }
-        }
+            Icon(
+                imageVector = Icons.Outlined.Settings,
+                contentDescription = "Notifikasi",
+                tint = AppColors.TextMain,
+            ) }
     }
 }
 

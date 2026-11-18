@@ -1,24 +1,32 @@
 package com.example.bpp_laundry
 
+import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.bpp_laundry.auth.ForgotPasswordUiState
+import com.example.bpp_laundry.auth.ForgotPasswordViewModel
 import com.example.bpp_laundry.ui.components.AppBackButton
 import com.example.bpp_laundry.ui.components.AppButton
 import com.example.bpp_laundry.ui.components.AppPasswordField
@@ -39,7 +47,11 @@ fun NewPasswordScreen(
     onBackClick: () -> Unit = {},
     onSaveClick: (newPassword: String) -> Unit = {},
     onBackToLoginClick: () -> Unit = {},
+    viewModel: ForgotPasswordViewModel = viewModel()
 ) {
+    val context = LocalContext.current
+    val uiState by viewModel.uiState.collectAsState()
+
     var password by rememberSaveable { mutableStateOf("") }
     var confirm by rememberSaveable { mutableStateOf("") }
 
@@ -48,6 +60,20 @@ fun NewPasswordScreen(
     val passwordValid = isPasswordValid(password)
     val mismatch = confirm.isNotEmpty() && confirm != password
     val canSave = passwordValid && confirm == password
+
+    LaunchedEffect(uiState) {
+        when (val state = uiState) {
+            is ForgotPasswordUiState.PasswordResetSuccess -> {
+                Toast.makeText(context, state.message, Toast.LENGTH_SHORT).show()
+                onSaveClick(password)
+                viewModel.resetState()
+            }
+            is ForgotPasswordUiState.Error -> {
+                Toast.makeText(context, state.message, Toast.LENGTH_LONG).show()
+            }
+            else -> Unit
+        }
+    }
 
     AppLayout(
         horizontalPadding = 16.dp,
@@ -112,15 +138,25 @@ fun NewPasswordScreen(
                             color = AppColors.ErrorInput,
                         )
                     }
+
+                    if (uiState is ForgotPasswordUiState.Error) {
+                        Text(
+                            text = (uiState as ForgotPasswordUiState.Error).message,
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
                 }
+
+                val isLoading = uiState is ForgotPasswordUiState.Loading
 
                 // Tombol simpan
                 AppButton(
-                    text = "Simpan kata sandi baru",
-                    enabled = canSave,
+                    text = if (isLoading) "Menyimpan..." else "Simpan kata sandi baru",
+                    enabled = canSave && !isLoading,
                     onClick = {
                         focusManager.clearFocus()
-                        onSaveClick(password)
+                        viewModel.resetPassword(password)
                     },
                 )
             }
@@ -131,6 +167,6 @@ fun NewPasswordScreen(
                 text = "Kembali ke halaman Masuk",
                 onClick = onBackToLoginClick,
             )
-        },
+        }
     )
 }
